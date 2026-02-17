@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>VR Session</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.4.0/dist/aframe-extras.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  </head>
+  <body>
+    <a-scene xr-mode-ui="enabled: true; enterARButton: false">
+      
+      <a-assets>
+        <audio id="snd-good" src="/static/good.mp3"></audio>
+        
+        <img id="gym-texture" src="/static/gym.png">
+        <img id="park-texture" src="https://live.staticflickr.com/65535/49931679483_70208b688d_b.jpg">
+        
+        <a-asset-item id="avatar-model" src="/static/pushup_avatar.glb"></a-asset-item>
+      </a-assets>
+
+      {% if env == 'park' %}
+        <a-sky src="#park-texture" rotation="0 -90 0"></a-sky>
+      {% else %}
+        <a-sky src="#gym-texture" rotation="0 -90 0"></a-sky>
+      {% endif %}
+
+      <a-light type="ambient" color="#FFF" intensity="0.8"></a-light>
+      <a-light type="directional" position="-1 1 0"></a-light>
+
+      <a-entity id="rig" position="0 0.5 2"> 
+        <a-entity camera look-controls position="0 0 0">
+             <a-text id="score-text" value="Reps: 0" position="-0.5 0.3 -1" color="white" width="2"></a-text>
+             <a-text id="status-text" value="Get Ready" position="0.3 0.3 -1" color="yellow" width="2"></a-text>
+        </a-entity>
+      </a-entity>
+
+      <a-entity 
+        gltf-model="#avatar-model" 
+        position="1 0 0" 
+        rotation="0 -45 0" 
+        scale="1 1 1"
+        animation-mixer="clip: *; loop: repeat; timeScale: 1">
+      </a-entity>
+
+      <a-text value="TRAINER" position="1 1.2 0" color="#00FFFF" align="center" width="4"></a-text>
+
+    </a-scene>
+
+    <script>
+      var socket = io();
+      var scoreText = document.querySelector('#score-text');
+      var statusText = document.querySelector('#status-text');
+
+      // --- NEW: TIMER LOGIC ---
+      var elapsed = 0;
+      setInterval(function() {
+        elapsed++;
+        var minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        var seconds = (elapsed % 60).toString().padStart(2, '0');
+        // If you want to show timer in VR, add an <a-text> for it or append to status
+        // console.log("Time: " + minutes + ":" + seconds); 
+      }, 1000);
+
+      // --- NEW: FEEDBACK LOGIC (From React Code) ---
+      // Get exercise type from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const exerciseType = urlParams.get('ex') || 'pushup';
+
+      const feedbackMessages = {
+        'cardio': ["Keep your pace!", "Breathe!", "Push it!"],
+        'yoga': ["Focus on breathing.", "Hold the pose.", "Find your center."],
+        'pushup': ["Keep back straight!", "Lower chest to floor!", "Great form!"],
+        'squat': ["Knees out!", "Chest up!", "Drive through heels!"]
+      };
+
+      // Speak feedback every 10 seconds
+      setInterval(function() {
+        var msgs = feedbackMessages[exerciseType] || feedbackMessages['pushup'];
+        var randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
+        
+        // Show in VR
+        statusText.setAttribute('value', randomMsg);
+        
+        // Speak Audio
+        var utterance = new SpeechSynthesisUtterance(randomMsg);
+        speechSynthesis.speak(utterance);
+      }, 10000);
+
+      // --- SOCKET UPDATES ---
+      socket.on('update_vr', function(data) {
+        scoreText.setAttribute('value', "Reps: " + data.reps);
+        // Only override status if Python sends a specific correction (like "Up!")
+        // otherwise let the random coach speak
+        if(data.status === "Push Now!" || data.status === "Up!") {
+             statusText.setAttribute('value', data.status);
+        }
+      });
+      
+      // ... (rest of your existing audio code) ...
+    </script>
+  </body>
+</html>

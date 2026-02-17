@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - PhysioVR</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f172a; /* Dark Navy Background */
+            color: #fff;
+            margin: 0;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+        }
+
+        /* --- NAVBAR (Updated) --- */
+        .navbar {
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* PhysioVR Brand on the Left */
+        .nav-brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: #38bdf8; /* Neon Blue */
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .nav-brand:hover {
+            color: white;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+
+        /* --- CONTAINER --- */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        /* --- NEON & GLASS EFFECTS --- */
+        .neon-text { color: #38bdf8; text-shadow: 0 0 20px rgba(56, 189, 248, 0.6); }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+        }
+
+        /* --- GRID LAYOUT --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 50px;
+        }
+
+        /* --- ANIMATIONS --- */
+        .fade-up { opacity: 0; transform: translateY(30px); animation: fadeInUp 0.8s ease-out forwards; }
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        .delay-3 { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* --- ICONS --- */
+        .icon-box {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 60px; height: 60px; background: rgba(56, 189, 248, 0.1);
+            border-radius: 12px; margin-bottom: 20px; color: #38bdf8;
+        }
+        svg { width: 30px; height: 30px; stroke-width: 2; }
+        
+        h1 { font-size: 3.5rem; margin-bottom: 20px; }
+        h3 { font-size: 1.5rem; margin-bottom: 10px; color: #f1f5f9; }
+        p { color: #94a3b8; line-height: 1.6; font-size: 1.1rem; }
+
+
+        /* --- CHAT CSS (Copied from Home) --- */
+        #chat-btn {
+            position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+            background: #007bff; color: white; border: none; border-radius: 50px;
+            padding: 15px 20px; font-size: 16px; font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer;
+        }
+        #chat-window {
+            display: none; position: fixed; bottom: 80px; right: 20px;
+            width: 300px; height: 400px; background: white; z-index: 9999;
+            border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            flex-direction: column; overflow: hidden; font-family: sans-serif; border: 1px solid #ccc;
+        }
+        .chat-header {
+            background: #007bff; color: white; padding: 10px; font-weight: bold;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        #messages {
+            flex: 1; padding: 10px; overflow-y: auto; background: #f9f9f9;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .msg { padding: 8px 12px; border-radius: 10px; max-width: 80%; font-size: 14px; color: black; }
+        .user-msg { background: #007bff; color: white; align-self: flex-end; }
+        .ai-msg { background: #e0e0e0; align-self: flex-start; }
+        .input-area { display: flex; padding: 10px; border-top: 1px solid #ddd; background: white; }
+        #chat-input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; outline: none; }
+        #send-btn {
+            margin-left: 5px; padding: 8px 12px; background: #007bff; color: white;
+            border: none; border-radius: 5px; cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="/" class="nav-brand">PhysioVR</a>
+    </div>
+
+    <div class="container">
+        
+        <div class="fade-up">
+            <h1>About <span class="neon-text">PhysioVR</span></h1>
+            <p style="max-width: 700px; margin: 0 auto;">
+                PhysioVR is an affordable VR-based health monitoring system that combines AI coaching with immersive virtual reality environments.
+            </p>
+        </div>
+
+        <div class="grid">
+            
+            <div class="glass-card fade-up delay-1">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <h3>Respiratory & Fatigue</h3>
+                <p>Real-time breath rate tracking and AI fatigue detection to prevent overexertion during recovery.</p>
+            </div>
+
+            <div class="glass-card fade-up delay-2">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+                <h3>VR Environments</h3>
+                <p>Train in immersive virtual worlds — from calming Zen gardens to professional gyms.</p>
+            </div>
+
+            <div class="glass-card fade-up delay-1">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3"/><path d="M15 1v3"/><path d="M9 20v3"/><path d="M15 20v3"/><path d="M20 9h3"/><path d="M20 14h3"/><path d="M1 9h3"/><path d="M1 14h3"/></svg>
+                </div>
+                <h3>AI Coach</h3>
+                <p>Get personalized posture correction and motivation from your digital trainer.</p>
+            </div>
+
+            <div class="glass-card fade-up delay-2">
+                <div class="icon-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <h3>Accessible</h3>
+                <p>No expensive headsets required. Just your smartphone and a laptop.</p>
+            </div>
+
+        </div>
+
+        <div class="fade-up delay-3" style="margin-top: 80px;">
+            <div class="glass-card" style="max-width: 700px; margin: 0 auto;">
+                <h2 style="color: #38bdf8; margin-bottom: 20px;">Our Vision</h2>
+                <p>
+                    We believe that health monitoring and fitness training should be available to everyone regardless of their location or economic status.
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <button id="chat-btn" onclick="toggleChat()">🤖 AI Coach</button>
+
+    <div id="chat-window">
+        <div class="chat-header">
+            <span>Fitness Coach</span>
+            <span onclick="toggleChat()" style="cursor:pointer;">✖</span>
+        </div>
+        <div id="messages">
+            <div class="msg ai-msg">Hi! Ask me about diet, workouts, or stress! 🏋️</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="chat-input" placeholder="Type here..." onkeypress="handleEnter(event)">
+            <button id="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CHAT LOGIC ---
+        var socket = io();
+
+        function toggleChat() {
+            var chat = document.getElementById('chat-window');
+            if (chat.style.display === 'none' || chat.style.display === '') {
+                chat.style.display = 'flex';
+            } else {
+                chat.style.display = 'none';
+            }
+        }
+
+        function sendMessage() {
+            var input = document.getElementById('chat-input');
+            var text = input.value.trim();
+            if (!text) return;
+
+            // 1. Show user message
+            addMessage(text, 'user');
+            
+            // 2. Send to Python Backend
+            socket.emit('send_chat', {message: text});
+
+            // 3. Clear input
+            input.value = '';
+        }
+
+        function addMessage(text, role) {
+            var msgsDiv = document.getElementById('messages');
+            var msgDiv = document.createElement('div');
+            msgDiv.className = 'msg ' + (role === 'user' ? 'user-msg' : 'ai-msg');
+            msgDiv.innerText = text;
+            msgsDiv.appendChild(msgDiv);
+            msgsDiv.scrollTop = msgsDiv.scrollHeight; 
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        // Listen for AI response
+        socket.on('receive_chat', function(data) {
+            addMessage(data.text, 'ai');
+        });
+    </script>
+
+</body>
+</html>
