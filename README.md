@@ -1,8 +1,8 @@
 Command to run the project in the terminal:
 
-.\.venv\Scripts\Activate
+" .\.venv\Scripts\Activate "
 
-pip install flask flask-socketio opencv-python mediapipe numpy
+" pip install flask flask-socketio opencv-python mediapipe numpy "
 
 If you run into error of: AttributeError: module 'mediapipe' has no attribute 'solutions'
 
