@@ -1,4 +1,5 @@
 Command to run the project in the terminal:
+python -m venv .venv
 
 " .\.venv\Scripts\Activate "
 
